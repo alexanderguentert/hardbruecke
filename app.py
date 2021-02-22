@@ -78,6 +78,16 @@ def create_future_df(name, date):
     future['Name'] = name
     return future
 
+def download_from_api(date):
+    url_day = """https://data.stadt-zuerich.ch/api/3/action/datastore_search_sql?sql=SELECT%20%22Timestamp%22,%22Name%22,%22In%22,%22Out%22%20from%20%222f27e464-4910-46bf-817b-a9bac19f86f3%22where%20%22Timestamp%22::TIMESTAMP::DATE=%27{day}%27%20;"""
+    df = pd.read_json(url_day.format(day=date)).loc['records', 'result']
+    df = pd.DataFrame.from_dict(df)#.drop(columns=['_full_text','_id'])
+    if df.empty:
+        data_available = False
+    else:
+        data_available = True
+    return data_available, df
+
 # load data
 filepath = './data/frequenzen_hardbruecke_2020.zip'
 hb = pd.read_csv(filepath, compression='zip')
@@ -147,9 +157,14 @@ def update_plots_tab2(date, location_name):
     if dates_min <= date <= dates_max:
         plot_df = hb2
     else:
-        future = data_preparation(create_future_df(location_name, date), names)
-        future['count'] = np.nan  # no real data available
-        plot_df = future
+        # data from api
+        data_available, df_api = download_from_api(date)
+        if data_available:
+            plot_df = data_preparation(df_api, names)
+        else:
+            future = data_preparation(create_future_df(location_name, date), names)
+            future['count'] = np.nan  # no real data available
+            plot_df = future
     return plot_day(plot_df, date, location_name, regressor, XList)
 
 
