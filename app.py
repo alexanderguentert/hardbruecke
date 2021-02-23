@@ -69,19 +69,21 @@ def plot_day(df, day, name, regressor, XList):
 def create_date_range(date, freq='5min'):
     return pd.date_range('{} 00:00:00'.format(date), '{} 23:55:00'.format(date), freq=freq)
 
+
 def create_future_df(name, date):
     future = pd.DataFrame({'Timestamp': create_date_range(date), })
     future['In'] = 0
     future['Out'] = 0
-    #future = future.set_index('Timestamp').stack().reset_index().drop(columns=0)
-    #future = future.rename(columns={'level_1':'direction'})
+    # future = future.set_index('Timestamp').stack().reset_index().drop(columns=0)
+    # future = future.rename(columns={'level_1':'direction'})
     future['Name'] = name
     return future
+
 
 def download_from_api(date):
     url_day = """https://data.stadt-zuerich.ch/api/3/action/datastore_search_sql?sql=SELECT%20%22Timestamp%22,%22Name%22,%22In%22,%22Out%22%20from%20%222f27e464-4910-46bf-817b-a9bac19f86f3%22where%20%22Timestamp%22::TIMESTAMP::DATE=%27{day}%27%20;"""
     df = pd.read_json(url_day.format(day=date)).loc['records', 'result']
-    df = pd.DataFrame.from_dict(df)#.drop(columns=['_full_text','_id'])
+    df = pd.DataFrame.from_dict(df)  # .drop(columns=['_full_text','_id'])
     if df.empty:
         data_available = False
     else:
@@ -121,7 +123,7 @@ app.layout = html.Div([
 def render_content(tab):
     if tab == 'tab-1':
         return html.Div([
-            html.H3('Tab content 1'),
+            html.H3('Prognosen und tatsächliche Fahrgastfrequenzen an der VBZ-Haltestelle Hardbrücke'),
             dcc.DatePickerSingle(
                 id='date-picker',
                 display_format='YYYY-MM-DD',
@@ -138,10 +140,11 @@ def render_content(tab):
             ),
             # html.Div(dcc.Graph(id='plot_prediction_day', figure=plot_day(hb2, '2020-07-23', 'Ost-Nord total', regressor, XList))),
             html.Div(dcc.Graph(id='plot_prediction_day', )),
+            dcc.Markdown(children='''Datenquelle: [https://data.stadt-zuerich.ch/dataset/vbz_frequenzen_hardbruecke](https://data.stadt-zuerich.ch/dataset/vbz_frequenzen_hardbruecke) Quellcode: [https://github.com/alexanderguentert/hardbruecke](https://github.com/alexanderguentert/hardbruecke)'''),
         ])
     elif tab == 'tab-2':
         return html.Div([
-            html.H3('Tab content 2')
+            html.H3('Hier gibt es noch keinen Inhalt')
         ])
 
 
