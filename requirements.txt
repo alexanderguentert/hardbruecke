@@ -1,10 +1,4 @@
-dash==1.9.1
-dash-core-components==1.8.1
-dash-html-components==1.0.2
-dash-renderer==1.2.4
-dash-table==4.6.1
-Flask==1.1.1
-Flask-Compress==1.4.0
+dash==1.19.1
 gunicorn==19.9.0
 numpy==1.19.2
 pandas==1.1.5
