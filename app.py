@@ -43,20 +43,30 @@ def data_preparation(df, names):
     df['Timestamp'] = pd.to_datetime(df['Timestamp'])
     df = df.set_index(['Timestamp', 'Name']).stack().reset_index()
     df = df.rename(columns={'level_2': 'direction', 0: 'count'})
+    df['count'] = pd.to_numeric(df['count'], downcast='unsigned')
+    df['direction'] = df['direction'].astype('category')
 
     df['hour'] = df['Timestamp'].dt.hour
+    df['hour'] = pd.to_numeric(df['hour'], downcast='unsigned')
+
     df['weekday'] = df['Timestamp'].dt.weekday
+    df['weekday'] = pd.to_numeric(df['weekday'], downcast='unsigned')
+
     df['minute'] = df['Timestamp'].dt.minute
+    df['minute'] = pd.to_numeric(df['minute'], downcast='unsigned')
+
     df['month'] = df['Timestamp'].dt.month
+    df['month'] = pd.to_numeric(df['month'], downcast='unsigned')
 
     df['day'] = pd.to_datetime(df['Timestamp'].dt.date)
 
     df['direction_cat'] = df['direction'].replace({'In': 0, 'Out': 1})
+    df['direction_cat'] = pd.to_numeric(df['direction_cat'], downcast='unsigned')
 
     df['name_cat'] = df['Name'].replace(names)
+    df['name_cat'] = pd.to_numeric(df['name_cat'], downcast='unsigned')
 
     return df
-
 
 def plot_day(df, day, name, regressor, XList):
     df_filter = df[(df['day'] == day) & (df['Name'] == name)].copy()
@@ -92,7 +102,7 @@ def download_from_api(date):
 
 # load data
 filepath = './data/frequenzen_hardbruecke_2020.zip'
-hb = pd.read_csv(filepath, compression='zip')
+hb = pd.read_csv(filepath, compression='zip',dtype={'Name':'category'})
 
 hb2 = data_preparation(hb, names)
 
