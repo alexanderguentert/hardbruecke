@@ -102,8 +102,24 @@ def download_from_api(date):
 
 # load data
 filepath = './data/frequenzen_hardbruecke_2020.zip'
-hb = pd.read_csv(filepath, compression='zip',dtype={'Name':'category'})
-
+#hb = pd.read_csv(filepath, compression='zip', dtype={'Name': 'category'})
+test_df = {
+    'In': {0: 1, 92411: 5, 182955: 2, 277384: 3, 450605: 7, 630294: 2},
+    'Out': {0: 0, 92411: 5, 182955: 2, 277384: 8, 450605: 5, 630294: 16},
+    'Timestamp': {0: '2020-11-01T23:55:00',
+        92411: '2020-11-01T23:55:00',
+        182955: '2020-11-01T23:55:00',
+        277384: '2020-11-01T23:55:00',
+        450605: '2020-11-01T23:55:00',
+        630294: '2020-11-01T23:55:00'},
+    'Name': {0: 'Ost-Nord total',
+        92411: 'Ost-SBB total',
+        182955: 'Ost-Süd total',
+        277384: 'Ost-VBZ Total',
+        450605: 'West-SBB total',
+        630294: 'West-VBZ total'}
+}
+hb = pd.DataFrame(test_df)
 hb2 = data_preparation(hb, names)
 
 del hb  # delete not used df
@@ -172,7 +188,7 @@ def render_content(tab):
 )
 def update_plots_tab2(date, location_name):
     # check if historical data is available
-    if dates_min <= date <= dates_max:
+    if False:  # dates_min <= date <= dates_max:
         plot_df = hb2
     else:
         # data from api
