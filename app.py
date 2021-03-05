@@ -102,7 +102,7 @@ def download_from_api(date):
 
 # load data
 filepath = './data/frequenzen_hardbruecke_2020.zip'
-#hb = pd.read_csv(filepath, compression='zip', dtype={'Name': 'category'})
+# hb = pd.read_csv(filepath, compression='zip', dtype={'Name': 'category'})
 test_df = {
     'In': {0: 1, 92411: 5, 182955: 2, 277384: 3, 450605: 7, 630294: 2},
     'Out': {0: 0, 92411: 5, 182955: 2, 277384: 8, 450605: 5, 630294: 16},
