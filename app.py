@@ -35,6 +35,10 @@ XList = [
 ]
 y = 'count'
 
+resource_api = {
+    '2021': """2f27e464-4910-46bf-817b-a9bac19f86f3""",
+    '2020': """5baeaf58-9af2-4a39-a357-9063ca450893""",
+}
 
 # functions
 
@@ -68,6 +72,7 @@ def data_preparation(df, names):
 
     return df
 
+
 def plot_day(df, day, name, regressor, XList):
     df_filter = df[(df['day'] == day) & (df['Name'] == name)].copy()
     df_filter['prediction'] = regressor.predict(df_filter[XList])
@@ -90,9 +95,12 @@ def create_future_df(name, date):
     return future
 
 
-def download_from_api(date):
-    url_day = """https://data.stadt-zuerich.ch/api/3/action/datastore_search_sql?sql=SELECT%20%22Timestamp%22,%22Name%22,%22In%22,%22Out%22%20from%20%222f27e464-4910-46bf-817b-a9bac19f86f3%22where%20%22Timestamp%22::TIMESTAMP::DATE=%27{day}%27%20;"""
-    df = pd.read_json(url_day.format(day=date)).loc['records', 'result']
+def download_from_api(date, resource):
+    url_day = """https://data.stadt-zuerich.ch/api/3/action/datastore_search_sql?""" \
+        """sql=SELECT%20%22Timestamp%22,%22Name%22,%22In%22,%22Out%22%20""" \
+        """from%20%22{resource}%22""" \
+        """where%20%22Timestamp%22::TIMESTAMP::DATE=%27{day}%27%20;"""
+    df = pd.read_json(url_day.format(day=date, resource=resource)).loc['records', 'result']
     df = pd.DataFrame.from_dict(df)  # .drop(columns=['_full_text','_id'])
     if df.empty:
         data_available = False
@@ -100,18 +108,19 @@ def download_from_api(date):
         data_available = True
     return data_available, df
 
+
 # load data
 filepath = './data/frequenzen_hardbruecke_2020.zip'
 # hb = pd.read_csv(filepath, compression='zip', dtype={'Name': 'category'})
 test_df = {
     'In': {0: 1, 92411: 5, 182955: 2, 277384: 3, 450605: 7, 630294: 2},
     'Out': {0: 0, 92411: 5, 182955: 2, 277384: 8, 450605: 5, 630294: 16},
-    'Timestamp': {0: '2020-11-01T23:55:00',
-        92411: '2020-11-01T23:55:00',
-        182955: '2020-11-01T23:55:00',
-        277384: '2020-11-01T23:55:00',
-        450605: '2020-11-01T23:55:00',
-        630294: '2020-11-01T23:55:00'},
+    'Timestamp': {0: '2021-01-01T23:55:00',
+        92411: '2021-01-01T23:55:00',
+        182955: '2021-01-01T23:55:00',
+        277384: '2021-01-01T23:55:00',
+        450605: '2021-01-01T23:55:00',
+        630294: '2021-01-01T23:55:00'},
     'Name': {0: 'Ost-Nord total',
         92411: 'Ost-SBB total',
         182955: 'Ost-Süd total',
@@ -169,9 +178,9 @@ def render_content(tab):
                 value=location_names[0],
                 labelStyle={'display': 'inline-block'}
             ),
-            # html.Div(dcc.Graph(id='plot_prediction_day', figure=plot_day(hb2, '2020-07-23', 'Ost-Nord total', regressor, XList))),
             html.Div(dcc.Graph(id='plot_prediction_day', )),
-            dcc.Markdown(children='''Datenquelle: [https://data.stadt-zuerich.ch/dataset/vbz_frequenzen_hardbruecke](https://data.stadt-zuerich.ch/dataset/vbz_frequenzen_hardbruecke) Quellcode: [https://github.com/alexanderguentert/hardbruecke](https://github.com/alexanderguentert/hardbruecke)'''),
+            dcc.Markdown(children='''Datenquelle: [https://data.stadt-zuerich.ch/dataset/vbz_frequenzen_hardbruecke](https://data.stadt-zuerich.ch/dataset/vbz_frequenzen_hardbruecke) """ / 
+                """Quellcode: [https://github.com/alexanderguentert/hardbruecke](https://github.com/alexanderguentert/hardbruecke)'''),
         ])
     elif tab == 'tab-2':
         return html.Div([
@@ -188,17 +197,23 @@ def render_content(tab):
 )
 def update_plots_tab2(date, location_name):
     # check if historical data is available
-    if False:  # dates_min <= date <= dates_max:
-        plot_df = hb2
-    else:
+    # if False:  # dates_min <= date <= dates_max:
+    #     plot_df = hb2
+    year = date[0:4]
+    if year in resource_api:
+        resource_year = resource_api[year]
         # data from api
-        data_available, df_api = download_from_api(date)
+        data_available, df_api = download_from_api(date, resource_year)
         if data_available:
             plot_df = data_preparation(df_api, names)
         else:
             future = data_preparation(create_future_df(location_name, date), names)
             future['count'] = np.nan  # no real data available
             plot_df = future
+    else:
+        future = data_preparation(create_future_df(location_name, date), names)
+        future['count'] = np.nan  # no real data available
+        plot_df = future
     return plot_day(plot_df, date, location_name, regressor, XList)
 
 
