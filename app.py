@@ -11,34 +11,6 @@ import dash_core_components as dcc
 
 from dash.dependencies import Input, Output
 
-# parameters
-names = {
-    'Ost-Süd total': 0,
-    'Ost-Sd total': 0,  # alias, as seen in api query
-    'Ost-Nord total': 1,
-    'Ost-SBB total': 2,
-    'West-SBB total': 3,
-    'West-Süd total': 4,
-    'West-Sd total': 4,  # alias, as seen in api query
-    'Ost-VBZ Total': 5,
-    'West-Nord total': 6,
-    'West-VBZ total': 7,
-}
-
-XList = [
-    'hour',
-    'weekday',
-    'minute',
-    'month',
-    'direction_cat',
-    'name_cat',
-]
-y = 'count'
-
-resource_api = {
-    '2021': """2f27e464-4910-46bf-817b-a9bac19f86f3""",
-    '2020': """5baeaf58-9af2-4a39-a357-9063ca450893""",
-}
 
 # functions
 
@@ -109,40 +81,6 @@ def download_from_api(date, resource):
     return data_available, df
 
 
-# load data
-filepath = './data/frequenzen_hardbruecke_2020.zip'
-# hb = pd.read_csv(filepath, compression='zip', dtype={'Name': 'category'})
-test_df = {
-    'In': {0: 1, 92411: 5, 182955: 2, 277384: 3, 450605: 7, 630294: 2},
-    'Out': {0: 0, 92411: 5, 182955: 2, 277384: 8, 450605: 5, 630294: 16},
-    'Timestamp': {0: '2021-01-01T23:55:00',
-        92411: '2021-01-01T23:55:00',
-        182955: '2021-01-01T23:55:00',
-        277384: '2021-01-01T23:55:00',
-        450605: '2021-01-01T23:55:00',
-        630294: '2021-01-01T23:55:00'},
-    'Name': {0: 'Ost-Nord total',
-        92411: 'Ost-SBB total',
-        182955: 'Ost-Süd total',
-        277384: 'Ost-VBZ Total',
-        450605: 'West-SBB total',
-        630294: 'West-VBZ total'}
-}
-hb = pd.DataFrame(test_df)
-hb2 = data_preparation(hb, names)
-
-del hb  # delete not used df
-
-dates = hb2['day'].dt.strftime('%Y-%m-%d')
-dates_min = dates.min()
-dates_max = dates.max()
-
-filename_model = './models/DecisionTreeRegressor.sav'
-
-regressor = pickle.load(open(filename_model, 'rb'))
-
-location_names = sorted(hb2['Name'].unique())
-
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -179,8 +117,8 @@ def render_content(tab):
                 labelStyle={'display': 'inline-block'}
             ),
             html.Div(dcc.Graph(id='plot_prediction_day', )),
-            dcc.Markdown(children='''Datenquelle: [https://data.stadt-zuerich.ch/dataset/vbz_frequenzen_hardbruecke](https://data.stadt-zuerich.ch/dataset/vbz_frequenzen_hardbruecke) """ / 
-                """Quellcode: [https://github.com/alexanderguentert/hardbruecke](https://github.com/alexanderguentert/hardbruecke)'''),
+            dcc.Markdown(children='''Datenquelle: [https://data.stadt-zuerich.ch/dataset/vbz_frequenzen_hardbruecke](https://data.stadt-zuerich.ch/dataset/vbz_frequenzen_hardbruecke)
+                Quellcode: [https://github.com/alexanderguentert/hardbruecke](https://github.com/alexanderguentert/hardbruecke)'''),
         ])
     elif tab == 'tab-2':
         return html.Div([
@@ -218,4 +156,45 @@ def update_plots_tab2(date, location_name):
 
 
 if __name__ == '__main__':
+    # parameters
+    names = {
+        'Ost-Süd total': 0,
+        'Ost-Sd total': 0,  # alias, as seen in api query
+        'Ost-Nord total': 1,
+        'Ost-SBB total': 2,
+        'West-SBB total': 3,
+        'West-Süd total': 4,
+        'West-Sd total': 4,  # alias, as seen in api query
+        'Ost-VBZ Total': 5,
+        'West-Nord total': 6,
+        'West-VBZ total': 7,
+    }
+
+    XList = [
+        'hour',
+        'weekday',
+        'minute',
+        'month',
+        'direction_cat',
+        'name_cat',
+    ]
+    y = 'count'
+
+    resource_api = {
+        '2021': """2f27e464-4910-46bf-817b-a9bac19f86f3""",
+        '2020': """5baeaf58-9af2-4a39-a357-9063ca450893""",
+    }
+
+    yesterday = (pd.to_datetime('today') - pd.Timedelta('1 days')).strftime('%Y-%m-%d')
+    dates_max = yesterday # dates.max()
+
+    filename_model = './models/DecisionTreeRegressor.sav'
+    regressor = pickle.load(open(filename_model, 'rb'))
+
+    location_names = [x for x in names.keys() if 'ü' not in x]  # api has problems with ü
+    # load data
+    filepath = './data/frequenzen_hardbruecke_2020.zip'
+    # hb = pd.read_csv(filepath, compression='zip', dtype={'Name': 'category'})
+
+    # run the app
     app.run_server(debug=True)
