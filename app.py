@@ -80,10 +80,49 @@ def download_from_api(date, resource):
         data_available = True
     return data_available, df
 
-dates_max = '2021-03-01'
+# parameters
+names = {
+    'Ost-Süd total': 0,
+    'Ost-Sd total': 0,  # alias, as seen in api query
+    'Ost-Nord total': 1,
+    'Ost-SBB total': 2,
+    'West-SBB total': 3,
+    'West-Süd total': 4,
+    'West-Sd total': 4,  # alias, as seen in api query
+    'Ost-VBZ Total': 5,
+    'West-Nord total': 6,
+    'West-VBZ total': 7,
+}
+
+XList = [
+    'hour',
+    'weekday',
+    'minute',
+    'month',
+    'direction_cat',
+    'name_cat',
+]
+y = 'count'
+
+resource_api = {
+    '2021': """2f27e464-4910-46bf-817b-a9bac19f86f3""",
+    '2020': """5baeaf58-9af2-4a39-a357-9063ca450893""",
+}
+
+
+
+filename_model = './models/DecisionTreeRegressor.sav'
+regressor = pickle.load(open(filename_model, 'rb'))
+
+location_names = [x for x in names.keys() if 'ü' not in x]  # api has problems with ü
+# load data
+filepath = './data/frequenzen_hardbruecke_2020.zip'
+# hb = pd.read_csv(filepath, compression='zip', dtype={'Name': 'category'})
+
+# dates_max = '2021-03-01'
 # not working on heroku
-# yesterday = (pd.to_datetime('today') - pd.Timedelta('1 days')).strftime('%Y-%m-%d')
-# dates_max = yesterday # dates.max()
+yesterday = (pd.to_datetime('today') - pd.Timedelta('1 days')).strftime('%Y-%m-%d')
+dates_max = yesterday # dates.max()
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -160,44 +199,6 @@ def update_plots_tab2(date, location_name):
 
 
 if __name__ == '__main__':
-    # parameters
-    names = {
-        'Ost-Süd total': 0,
-        'Ost-Sd total': 0,  # alias, as seen in api query
-        'Ost-Nord total': 1,
-        'Ost-SBB total': 2,
-        'West-SBB total': 3,
-        'West-Süd total': 4,
-        'West-Sd total': 4,  # alias, as seen in api query
-        'Ost-VBZ Total': 5,
-        'West-Nord total': 6,
-        'West-VBZ total': 7,
-    }
-
-    XList = [
-        'hour',
-        'weekday',
-        'minute',
-        'month',
-        'direction_cat',
-        'name_cat',
-    ]
-    y = 'count'
-
-    resource_api = {
-        '2021': """2f27e464-4910-46bf-817b-a9bac19f86f3""",
-        '2020': """5baeaf58-9af2-4a39-a357-9063ca450893""",
-    }
-
-
-
-    filename_model = './models/DecisionTreeRegressor.sav'
-    regressor = pickle.load(open(filename_model, 'rb'))
-
-    location_names = [x for x in names.keys() if 'ü' not in x]  # api has problems with ü
-    # load data
-    filepath = './data/frequenzen_hardbruecke_2020.zip'
-    # hb = pd.read_csv(filepath, compression='zip', dtype={'Name': 'category'})
 
     # run the app
     app.run_server(debug=True)
