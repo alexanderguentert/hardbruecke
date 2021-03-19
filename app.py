@@ -80,6 +80,10 @@ def download_from_api(date, resource):
         data_available = True
     return data_available, df
 
+dates_max = '2021-03-01'
+# not working on heroku
+# yesterday = (pd.to_datetime('today') - pd.Timedelta('1 days')).strftime('%Y-%m-%d')
+# dates_max = yesterday # dates.max()
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -185,10 +189,7 @@ if __name__ == '__main__':
         '2020': """5baeaf58-9af2-4a39-a357-9063ca450893""",
     }
 
-    dates_max = '2021-03-01'
-    # not working on heroku
-    # yesterday = (pd.to_datetime('today') - pd.Timedelta('1 days')).strftime('%Y-%m-%d')
-    # dates_max = yesterday # dates.max()
+
 
     filename_model = './models/DecisionTreeRegressor.sav'
     regressor = pickle.load(open(filename_model, 'rb'))
