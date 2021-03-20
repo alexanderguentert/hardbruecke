@@ -81,6 +81,8 @@ def download_from_api(date, resource):
     return data_available, df
 
 # parameters
+
+
 names = {
     'Ost-Süd total': 0,
     'Ost-Sd total': 0,  # alias, as seen in api query
@@ -110,7 +112,6 @@ resource_api = {
 }
 
 
-
 filename_model = './models/DecisionTreeRegressor.sav'
 regressor = pickle.load(open(filename_model, 'rb'))
 
@@ -122,7 +123,7 @@ filepath = './data/frequenzen_hardbruecke_2020.zip'
 # dates_max = '2021-03-01'
 # not working on heroku
 yesterday = (pd.to_datetime('today') - pd.Timedelta('1 days')).strftime('%Y-%m-%d')
-dates_max = yesterday # dates.max()
+dates_max = yesterday
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -131,6 +132,21 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
 
 app.layout = html.Div([
+    html.H1('Fahrgastfrequenzen an der VBZ-Haltestelle Hardbrücke'),
+    dcc.Markdown(children='''Die Anzahl der Fahrgäste an einer Haltestelle unterliegt bestimmen Regelmässigkeiten, auch in Zeiten einer Pandemie.
+            Die VBZ stellen die Fahrgastfrequenzen der Haltestelle Hardbrücke in Zürich offen zur Verfügung.
+            Wie viele Personen die Haltestelle aus welcher Richtung betreten oder verlassen haben lässt sich so detailliert nachvollziehen.
+            Mit Machine Learning können regelmässige Muster in den Daten erkannt und damit auch Prognosen für die Zukunft erstellt werden.
+            Sehen Sie hier die Prognosen eines Modells, das mit den Daten des Jahres 2020 trainiert wurde. 
+            Sofern die tatsächlichen Frequenzen zur Verfügung stehen, können sie direkt mit den Prognosen verglichen werden.
+            '''),
+    dcc.Markdown(children='Situationsplan an Westkante und Ostkante:'),
+    html.Img(src='https://www.stadt-zuerich.ch/content/dam/stzh/portal/Deutsch/OGD/Bilder/ckan/zu-daten/vbz_Situation_Westkante.PNG', width=1000),
+    html.Img(src='https://www.stadt-zuerich.ch/content/dam/stzh/portal/Deutsch/OGD/Bilder/ckan/zu-daten/vbz_Situation_Ostkante.PNG', width=1000),
+    dcc.Markdown(children='''Daten- und Bildquelle: [https://data.stadt-zuerich.ch/dataset/vbz_frequenzen_hardbruecke]
+                            (https://data.stadt-zuerich.ch/dataset/vbz_frequenzen_hardbruecke)
+                            Quellcode: [https://github.com/alexanderguentert/hardbruecke]
+                            (https://github.com/alexanderguentert/hardbruecke)'''),
     dcc.Tabs(id='tabs-example', value='tab-1', children=[
         dcc.Tab(label='Voraussagen', value='tab-1'),
         dcc.Tab(label='Historische Daten', value='tab-2'),
@@ -144,7 +160,7 @@ app.layout = html.Div([
 def render_content(tab):
     if tab == 'tab-1':
         return html.Div([
-            html.H3('Prognosen und tatsächliche Fahrgastfrequenzen an der VBZ-Haltestelle Hardbrücke'),
+            html.H3('Prognosen (rot) und tatsächliche (blau) Fahrgastfrequenzen'),
             dcc.DatePickerSingle(
                 id='date-picker',
                 display_format='YYYY-MM-DD',
@@ -160,8 +176,6 @@ def render_content(tab):
                 labelStyle={'display': 'inline-block'}
             ),
             html.Div(dcc.Graph(id='plot_prediction_day', )),
-            dcc.Markdown(children='''Datenquelle: [https://data.stadt-zuerich.ch/dataset/vbz_frequenzen_hardbruecke](https://data.stadt-zuerich.ch/dataset/vbz_frequenzen_hardbruecke)
-                Quellcode: [https://github.com/alexanderguentert/hardbruecke](https://github.com/alexanderguentert/hardbruecke)'''),
         ])
     elif tab == 'tab-2':
         return html.Div([
