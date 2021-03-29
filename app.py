@@ -80,9 +80,30 @@ def download_from_api(date, resource):
         data_available = True
     return data_available, df
 
+
+def time_grouper(df, frequency, aggregation):
+    df = df.groupby([pd.Grouper(key='Timestamp', freq=frequency), 'direction'])['count'].agg(aggregation)
+    df = df.reset_index()
+    df = df.rename(columns={'count': aggregation})
+    return df
+
+
+def plot_time_group(df, aggregation):
+    return px.line(df, x='Timestamp', y=aggregation, color='direction', title='Zeitliche Verteilung')
+
+
+def name_grouper(df, aggregation):
+    df = df.groupby(['Name', 'direction'])['count'].agg(aggregation)
+    df = df.reset_index()
+    df = df.rename(columns={'count': aggregation})
+    return df
+
+
+def plot_name_group(df, aggregation):
+    return px.bar(df, x='Name', y=aggregation, color='direction', barmode='group', title='Verteilung je Ort')
+
+
 # parameters
-
-
 names = {
     'Ost-Süd total': 0,
     'Ost-Sd total': 0,  # alias, as seen in api query
@@ -111,19 +132,28 @@ resource_api = {
     '2020': """5baeaf58-9af2-4a39-a357-9063ca450893""",
 }
 
+# parameters
+freq_dict = {
+    'Woche': 'W',
+    'Monat': 'M',
+    'Quartal': 'Q',
+    'Tag': 'd',
+}
+agg_dict = {
+    'Mittelwert': 'mean',
+    'Median': 'median',
+    'Minimum': 'min',
+    'Maximum': 'max',
+    'Summe': 'sum',
+    'Anzahl': 'count',
+}
 
-filename_model = './models/DecisionTreeRegressor.sav'
-regressor = pickle.load(open(filename_model, 'rb'))
 
 location_names = [x for x in names.keys() if 'ü' not in x]  # api has problems with ü
-# load data
-filepath = './data/frequenzen_hardbruecke_2020.zip'
-# hb = pd.read_csv(filepath, compression='zip', dtype={'Name': 'category'})
 
-# dates_max = '2021-03-01'
-# not working on heroku
 yesterday = (pd.to_datetime('today') - pd.Timedelta('1 days')).strftime('%Y-%m-%d')
 dates_max = yesterday
+
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -179,18 +209,38 @@ def render_content(tab):
         ])
     elif tab == 'tab-2':
         return html.Div([
-            html.H3('Hier gibt es noch keinen Inhalt')
+            dcc.Markdown(children='Analysieren Sie hier die Daten, mit denen der Prognosealgorithmus trainiert wurde'),
+            dcc.Dropdown(
+                id='location_names_hd',
+                options=[{'label': i, 'value': i} for i in location_names_hd],
+                value=location_names_hd,
+                multi=True
+            ),
+            dcc.RadioItems(
+                id='time_group',
+                options=[{'label': i, 'value': i} for i in freq_dict],
+                value=list(freq_dict.keys())[0],
+                labelStyle={'display': 'inline-block'}
+            ),
+            dcc.RadioItems(
+                id='agg_value',
+                options=[{'label': i, 'value': i} for i in agg_dict],
+                value=list(agg_dict.keys())[0],
+                labelStyle={'display': 'inline-block'}
+            ),
+            html.Div(dcc.Graph(id='plot_time_group', )),
+            html.Div(dcc.Graph(id='plot_name_group', )),
         ])
 
 
 # callbacks for graphs in tabs
-# tab-2
+# tab-1
 @app.callback(
     dash.dependencies.Output('plot_prediction_day', 'figure'),
     [dash.dependencies.Input('date-picker', 'date'),
      dash.dependencies.Input('location_names', 'value')]
 )
-def update_plots_tab2(date, location_name):
+def update_plots_tab1(date, location_name):
     # check if historical data is available
     # if False:  # dates_min <= date <= dates_max:
     #     plot_df = hb2
@@ -210,6 +260,38 @@ def update_plots_tab2(date, location_name):
         future['count'] = np.nan  # no real data available
         plot_df = future
     return plot_day(plot_df, date, location_name, regressor, XList)
+
+
+# callbacks for graphs in tabs
+# tab-2
+@app.callback(
+    [dash.dependencies.Output('plot_time_group', 'figure'),
+     dash.dependencies.Output('plot_name_group', 'figure'),
+     ],
+    [dash.dependencies.Input('location_names_hd', 'value'),
+     dash.dependencies.Input('time_group', 'value'),
+     dash.dependencies.Input('agg_value', 'value'),
+     ]
+)
+def update_plots_tab2(location_names_hd, time_group, agg_value):
+    hd_filter = hd[hd['Name'].isin(location_names_hd)]
+    time_group_df = time_grouper(hd_filter, freq_dict[time_group], agg_dict[agg_value])
+    name_grouper_df = name_grouper(hd_filter, agg_dict[agg_value])
+    return plot_time_group(time_group_df, agg_dict[agg_value]), plot_name_group(name_grouper_df, agg_dict[agg_value])
+
+
+# load model
+filename_model = './models/DecisionTreeRegressor.sav'
+regressor = pickle.load(open(filename_model, 'rb'))
+
+# load historical data
+filepath = 'data/frequenzen_hardbruecke_2020.zip'
+hd = pd.read_csv(filepath, compression='zip')
+
+hd = data_preparation(hd, names)
+dates = hd['day'].dt.strftime('%Y-%m-%d')
+
+location_names_hd = hd['Name'].unique().tolist()
 
 
 if __name__ == '__main__':
