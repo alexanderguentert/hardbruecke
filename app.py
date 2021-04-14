@@ -81,26 +81,51 @@ def download_from_api(date, resource):
     return data_available, df
 
 
-def time_grouper(df, frequency, aggregation):
-    df = df.groupby([pd.Grouper(key='Timestamp', freq=frequency), 'direction'])['count'].agg(aggregation)
-    df = df.reset_index()
-    df = df.rename(columns={'count': aggregation})
-    return df
+def get_from_api(url):
+    """
+    Download from api. For historical data
+    :param url:
+    :return:
+    """
+    df = pd.read_json(url).loc['records', 'result']
+    df = pd.DataFrame.from_dict(df)  # .drop(columns=['_full_text','_id'])
+    if df.empty:
+        data_available = False
+    else:
+        data_available = True
+    return data_available, df
 
 
-def plot_time_group(df, aggregation):
-    return px.line(df, x='Timestamp', y=aggregation, color='direction', title='Zeitliche Verteilung')
+def plot_time_group(resource, frequency, aggregation):
+    url_time = """https://data.stadt-zuerich.ch/api/3/action/datastore_search_sql?""" \
+               """sql=SELECT%20DATE_TRUNC(%27{frequency}%27,%22Timestamp%22::TIMESTAMP)%20AS%20timestamp,""" \
+               """{aggregation}(%22In%22::INT)%20AS%20in,{aggregation}(%22Out%22::INT)%20as%20out%20""" \
+               """from%20%22{resource}%22%20GROUP%20BY%201%20ORDER%20BY%201"""
+    data_available, time_group_df = get_from_api(
+        url_time.format(resource=resource, frequency=frequency, aggregation=aggregation))
+    if data_available:
+        time_group_df['timestamp'] = pd.to_datetime(time_group_df['timestamp'])
+        time_group_df = time_group_df.set_index('timestamp').stack().reset_index()
+        time_group_df = time_group_df.rename(columns={'level_1': 'direction', 0: aggregation})
+
+        return px.line(time_group_df, x='timestamp', y=aggregation, color='direction', title='Zeitliche Verteilung')
+    else:
+        return px.line(title='Keine Daten verfügbar')
 
 
-def name_grouper(df, aggregation):
-    df = df.groupby(['Name', 'direction'])['count'].agg(aggregation)
-    df = df.reset_index()
-    df = df.rename(columns={'count': aggregation})
-    return df
-
-
-def plot_name_group(df, aggregation):
-    return px.bar(df, x='Name', y=aggregation, color='direction', barmode='group', title='Verteilung je Ort')
+def plot_name_group(resource, aggregation):
+    url_name = """https://data.stadt-zuerich.ch/api/3/action/datastore_search_sql?""" \
+        """sql=SELECT%20%22Name%22,{aggregation}(%22In%22::INT)%20AS%20in,{aggregation}(%22Out%22::INT)%20as%20out%20""" \
+        """from%20%22{resource}%22%20GROUP%20BY%201%20ORDER%20BY%201"""
+    data_available, name_group_df = get_from_api(url_name.format(resource=resource,
+                                                                 aggregation=aggregation))
+    if data_available:
+        name_group_df = name_group_df.set_index('Name').stack().reset_index()
+        name_group_df = name_group_df.rename(columns={'level_1': 'direction', 0: aggregation})
+        return px.bar(name_group_df, x='Name', y=aggregation,
+                      color='direction', barmode='group', title='Verteilung je Ort')
+    else:
+        return px.bar(title='Keine Daten verfügbar')
 
 
 # parameters
@@ -134,25 +159,28 @@ resource_api = {
 
 # parameters
 freq_dict = {
-    'Woche': 'W',
-    'Monat': 'M',
-    'Quartal': 'Q',
-    'Tag': 'd',
+    'Woche': 'WEEK',
+    'Monat': 'MONTH',
+    'Quartal': 'QUARTER',
+    'Tag': 'DAY',
 }
 agg_dict = {
-    'Mittelwert': 'mean',
-    'Median': 'median',
-    'Minimum': 'min',
-    'Maximum': 'max',
-    'Summe': 'sum',
-    'Anzahl': 'count',
+    'Mittelwert': 'AVG',
+    # 'Median': 'median',
+    'Minimum': 'MIN',
+    'Maximum': 'MAX',
+    'Summe': 'SUM',
+    'Anzahl': 'COUNT',
 }
-
 
 location_names = [x for x in names.keys() if 'ü' not in x]  # api has problems with ü
 
 yesterday = (pd.to_datetime('today') - pd.Timedelta('1 days')).strftime('%Y-%m-%d')
 dates_max = yesterday
+
+# load model
+filename_model = './models/DecisionTreeRegressor.sav'
+regressor = pickle.load(open(filename_model, 'rb'))
 
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -190,7 +218,7 @@ app.layout = html.Div([
 def render_content(tab):
     if tab == 'tab-1':
         return html.Div([
-            html.H3('Prognosen (rot) und tatsächliche (blau) Fahrgastfrequenzen'),
+            html.H3('Prognosen (rot) und tatsächliche Fahrgastfrequenzen (blau)'),
             dcc.DatePickerSingle(
                 id='date-picker',
                 display_format='YYYY-MM-DD',
@@ -210,24 +238,30 @@ def render_content(tab):
     elif tab == 'tab-2':
         return html.Div([
             dcc.Markdown(children='Analysieren Sie hier die Daten, mit denen der Prognosealgorithmus trainiert wurde'),
-            dcc.Dropdown(
-                id='location_names_hd',
-                options=[{'label': i, 'value': i} for i in location_names_hd],
-                value=location_names_hd,
-                multi=True
-            ),
-            dcc.RadioItems(
-                id='time_group',
-                options=[{'label': i, 'value': i} for i in freq_dict],
-                value=list(freq_dict.keys())[0],
-                labelStyle={'display': 'inline-block'}
-            ),
-            dcc.RadioItems(
-                id='agg_value',
-                options=[{'label': i, 'value': i} for i in agg_dict],
-                value=list(agg_dict.keys())[0],
-                labelStyle={'display': 'inline-block'}
-            ),
+            html.Div(dcc.Markdown(children='Jahr:'), style={'width': '15%', 'display': 'inline-block'}),
+            html.Div(
+                dcc.RadioItems(
+                    id='resource',
+                    options=[{'label': i, 'value': i} for i in sorted(resource_api.keys())],
+                    value=list(sorted(resource_api.keys()))[0],
+                    labelStyle={'display': 'inline-block'}
+                ), style={'width': '85%', 'display': 'inline-block'}),
+            html.Div(dcc.Markdown(children='Zeitliche Gruppierung:'), style={'width': '15%', 'display': 'inline-block'}),
+            html.Div(
+                dcc.RadioItems(
+                    id='time_group',
+                    options=[{'label': i, 'value': i} for i in freq_dict],
+                    value=list(freq_dict.keys())[0],
+                    labelStyle={'display': 'inline-block'}
+                ), style={'width': '85%', 'display': 'inline-block'}),
+            html.Div(dcc.Markdown(children='Aggregation:'), style={'width': '15%', 'display': 'inline-block'}),
+            html.Div(
+                dcc.RadioItems(
+                    id='agg_value',
+                    options=[{'label': i, 'value': i} for i in agg_dict],
+                    value=list(agg_dict.keys())[0],
+                    labelStyle={'display': 'inline-block'}
+                ), style={'width': '85%', 'display': 'inline-block'}),
             html.Div(dcc.Graph(id='plot_time_group', )),
             html.Div(dcc.Graph(id='plot_name_group', )),
         ])
@@ -268,30 +302,13 @@ def update_plots_tab1(date, location_name):
     [dash.dependencies.Output('plot_time_group', 'figure'),
      dash.dependencies.Output('plot_name_group', 'figure'),
      ],
-    [dash.dependencies.Input('location_names_hd', 'value'),
+    [dash.dependencies.Input('resource', 'value'),
      dash.dependencies.Input('time_group', 'value'),
      dash.dependencies.Input('agg_value', 'value'),
      ]
 )
-def update_plots_tab2(location_names_hd, time_group, agg_value):
-    hd_filter = hd[hd['Name'].isin(location_names_hd)]
-    time_group_df = time_grouper(hd_filter, freq_dict[time_group], agg_dict[agg_value])
-    name_grouper_df = name_grouper(hd_filter, agg_dict[agg_value])
-    return plot_time_group(time_group_df, agg_dict[agg_value]), plot_name_group(name_grouper_df, agg_dict[agg_value])
-
-
-# load model
-filename_model = './models/DecisionTreeRegressor.sav'
-regressor = pickle.load(open(filename_model, 'rb'))
-
-# load historical data
-filepath = 'data/frequenzen_hardbruecke_2020.zip'
-hd = pd.read_csv(filepath, compression='zip')
-
-hd = data_preparation(hd, names)
-dates = hd['day'].dt.strftime('%Y-%m-%d')
-
-location_names_hd = hd['Name'].unique().tolist()
+def update_plots_tab2(resource, time_group, agg_value):
+    return plot_time_group(resource_api[resource], freq_dict[time_group], agg_dict[agg_value]), plot_name_group(resource_api['2021'], agg_dict[agg_value])
 
 
 if __name__ == '__main__':
