@@ -109,7 +109,8 @@ def plot_time_group(resource, frequency, aggregation):
         time_group_df = time_group_df.rename(columns={'level_1': 'direction', 0: aggregation})
         time_group_df[aggregation] = time_group_df[aggregation].astype(float)
 
-        return px.line(time_group_df, x='timestamp', y=aggregation, color='direction', title='Zeitliche Verteilung')
+        return px.line(time_group_df, x='timestamp', y=aggregation, color='direction', title='Zeitliche Verteilung',
+                       color_discrete_sequence=px.colors.qualitative.Dark2)
     else:
         return px.line(title='Keine Daten verfügbar')
 
@@ -125,7 +126,8 @@ def plot_name_group(resource, aggregation):
         name_group_df = name_group_df.rename(columns={'level_1': 'direction', 0: aggregation})
         name_group_df[aggregation] = name_group_df[aggregation].astype(float)
         return px.bar(name_group_df, x='Name', y=aggregation,
-                      color='direction', barmode='group', title='Verteilung je Ort')
+                      color='direction', barmode='group', title='Verteilung je Ort',
+                      color_discrete_sequence=px.colors.qualitative.Dark2)
     else:
         return px.bar(title='Keine Daten verfügbar')
 
