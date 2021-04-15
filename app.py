@@ -107,6 +107,7 @@ def plot_time_group(resource, frequency, aggregation):
         time_group_df['timestamp'] = pd.to_datetime(time_group_df['timestamp'])
         time_group_df = time_group_df.set_index('timestamp').stack().reset_index()
         time_group_df = time_group_df.rename(columns={'level_1': 'direction', 0: aggregation})
+        time_group_df[aggregation] = time_group_df[aggregation].astype(float)
 
         return px.line(time_group_df, x='timestamp', y=aggregation, color='direction', title='Zeitliche Verteilung')
     else:
@@ -122,6 +123,7 @@ def plot_name_group(resource, aggregation):
     if data_available:
         name_group_df = name_group_df.set_index('Name').stack().reset_index()
         name_group_df = name_group_df.rename(columns={'level_1': 'direction', 0: aggregation})
+        name_group_df[aggregation] = name_group_df[aggregation].astype(float)
         return px.bar(name_group_df, x='Name', y=aggregation,
                       color='direction', barmode='group', title='Verteilung je Ort')
     else:
