@@ -14,3 +14,5 @@ Wie viele Personen die Haltestelle aus welcher Richtung betreten oder verlassen 
 Mit Machine Learning können regelmässige Muster in den Daten erkannt und damit auch Prognosen für die Zukunft erstellt werden.
 Sehen Sie hier die Prognosen eines Modells, das mit den Daten des Jahres 2020 trainiert wurde. 
 Sofern die tatsächlichen Frequenzen zur Verfügung stehen, können sie direkt mit den Prognosen verglichen werden.
+
+![Vorschau](image/hardbruecke_example.png)
