@@ -19,28 +19,23 @@ def data_preparation(df, names):
     df['Timestamp'] = pd.to_datetime(df['Timestamp'])
     df = df.set_index(['Timestamp', 'Name']).stack().reset_index()
     df = df.rename(columns={'level_2': 'direction', 0: 'count'})
-    df['count'] = pd.to_numeric(df['count'], downcast='unsigned')
     df['direction'] = df['direction'].astype('category')
 
+    df['year'] = df['Timestamp'].dt.year
+
     df['hour'] = df['Timestamp'].dt.hour
-    df['hour'] = pd.to_numeric(df['hour'], downcast='unsigned')
 
     df['weekday'] = df['Timestamp'].dt.weekday
-    df['weekday'] = pd.to_numeric(df['weekday'], downcast='unsigned')
 
     df['minute'] = df['Timestamp'].dt.minute
-    df['minute'] = pd.to_numeric(df['minute'], downcast='unsigned')
 
     df['month'] = df['Timestamp'].dt.month
-    df['month'] = pd.to_numeric(df['month'], downcast='unsigned')
 
     df['day'] = pd.to_datetime(df['Timestamp'].dt.date)
 
     df['direction_cat'] = df['direction'].replace({'In': 0, 'Out': 1})
-    df['direction_cat'] = pd.to_numeric(df['direction_cat'], downcast='unsigned')
 
     df['name_cat'] = df['Name'].replace(names)
-    df['name_cat'] = pd.to_numeric(df['name_cat'], downcast='unsigned')
 
     return df
 
@@ -147,6 +142,7 @@ names = {
 }
 
 XList = [
+    'year',
     'hour',
     'weekday',
     'minute',
@@ -190,6 +186,8 @@ regressor = pickle.load(open(filename_model, 'rb'))
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+
+app.title = 'Hardbrücke Fahrgastfrequenzen'
 
 server = app.server
 
