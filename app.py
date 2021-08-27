@@ -44,6 +44,7 @@ def plot_day(df, day, name, regressor, XList):
     df_filter = df[(df['day'] == day) & (df['Name'] == name)].copy()
     df_filter['prediction'] = regressor.predict(df_filter[XList])
     melted = df_filter.melt(id_vars=['Timestamp', 'direction', 'Name'], value_vars=['count', 'prediction'])
+    melted['value'] = melted['value'].astype(float)
     fig = px.line(melted, x='Timestamp', y='value', color='variable', facet_row='direction', title=name)
     return fig
 
