@@ -201,9 +201,6 @@ app.layout = html.Div([
             Sehen Sie hier die Prognosen eines Modells, das mit den Daten des Jahres 2020 trainiert wurde. 
             Sofern die tatsächlichen Frequenzen zur Verfügung stehen, können sie direkt mit den Prognosen verglichen werden.
             '''),
-    dcc.Markdown(children='Situationsplan an Westkante und Ostkante:'),
-    html.Img(src='https://www.stadt-zuerich.ch/content/dam/stzh/portal/Deutsch/OGD/Bilder/ckan/zu-daten/vbz_Situation_Westkante.PNG', width=1000),
-    html.Img(src='https://www.stadt-zuerich.ch/content/dam/stzh/portal/Deutsch/OGD/Bilder/ckan/zu-daten/vbz_Situation_Ostkante.PNG', width=1000),
     dcc.Markdown(children='''Daten- und Bildquelle: [https://data.stadt-zuerich.ch/dataset/vbz_frequenzen_hardbruecke]
                             (https://data.stadt-zuerich.ch/dataset/vbz_frequenzen_hardbruecke)
                             Quellcode: [https://github.com/alexanderguentert/hardbruecke]
@@ -211,6 +208,7 @@ app.layout = html.Div([
     dcc.Tabs(id='tabs-example', value='tab-1', children=[
         dcc.Tab(label='Voraussagen', value='tab-1'),
         dcc.Tab(label='Historische Daten', value='tab-2'),
+        dcc.Tab(label='Situationsplan', value='tab-3'),
     ]),
     html.Div(id='tabs-example-content')
 ])
@@ -268,7 +266,30 @@ def render_content(tab):
             html.Div(dcc.Graph(id='plot_time_group', )),
             html.Div(dcc.Graph(id='plot_name_group', )),
         ])
+    elif tab == 'tab-3':
+        return html.Div([
+            dcc.Markdown(children="""
+Hier einige Informationen zu den angegebenen Richtungen von: 
+[https://data.stadt-zuerich.ch/dataset/vbz_frequenzen_hardbruecke]
+            (https://data.stadt-zuerich.ch/dataset/vbz_frequenzen_hardbruecke)
+> Die Daten werden richtungsgetrennt ausgewiesen.
+> * "Ost" bezeichnet die Haltestelle Hardbrücke mit Fahrtrichtung Schiffbau.
+> * "West" bezeichnet die Haltestelle Hardbrücke mit Fahrtrichtung Hardplatz.
 
+> Zudem werden die Frequenzen an vier verschiedenen Zähllinien erfasst.
+> * "Süd" bezeichnet die Zähllinie im Süden der Haltestelle. Es werden alle Personen erfasst, die vom Hardplatz kommend die VBZ-Haltestelle betreten bzw. die Haltestelle in diese Richtung verlassen.
+> * "Nord" bezeichnet die Zähllinie im Norden der Haltestelle. Es werden alle Persoenen erfasst, die via Fussgängerrampe im Norden die VBZ-Haltestelle betreten/verlassen.
+> * "SBB", bezeichnet die Zähllinie mit Zugang zur S-Bahnstation Hardbrücke. Es werden alle Personen erfasst, die von der SBB kommend die VBZ-Haltestelle betreten bzw. die Haltestelle in diese Richtung verlassen.
+> * "VBZ", bezeichnet die Zähllinie mit den VBZ-Frequenzen. Es werden alle Persoenen erfasst, die von einem VBZ-Fahrzeug die VBZ-Haltestelle betreten bzw. die Haltestelle durch Einstieg in ein VBZ-Fahrzeug verlassen.
+
+Situation an West und Ostkante:"""),
+            html.Img(
+                src='https://www.stadt-zuerich.ch/content/dam/stzh/portal/Deutsch/OGD/Bilder/ckan/zu-daten/vbz_Situation_Westkante.PNG',
+                width=1000),
+            html.Img(
+                src='https://www.stadt-zuerich.ch/content/dam/stzh/portal/Deutsch/OGD/Bilder/ckan/zu-daten/vbz_Situation_Ostkante.PNG',
+                width=1000),
+        ])
 
 # callbacks for graphs in tabs
 # tab-1
