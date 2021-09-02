@@ -275,6 +275,7 @@ Hier einige Informationen zu den angegebenen Richtungen von:
 > Die Daten werden richtungsgetrennt ausgewiesen.
 > * "Ost" bezeichnet die Haltestelle Hardbrücke mit Fahrtrichtung Schiffbau.
 > * "West" bezeichnet die Haltestelle Hardbrücke mit Fahrtrichtung Hardplatz.
+
 > Zudem werden die Frequenzen an vier verschiedenen Zähllinien erfasst.
 > * "Süd" bezeichnet die Zähllinie im Süden der Haltestelle. Es werden alle Personen erfasst, die vom Hardplatz kommend die VBZ-Haltestelle betreten bzw. die Haltestelle in diese Richtung verlassen.
 > * "Nord" bezeichnet die Zähllinie im Norden der Haltestelle. Es werden alle Persoenen erfasst, die via Fussgängerrampe im Norden die VBZ-Haltestelle betreten/verlassen.
