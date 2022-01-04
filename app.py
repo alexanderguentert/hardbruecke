@@ -154,6 +154,7 @@ XList = [
 y = 'count'
 
 resource_api = {
+    '2022': """a0c89c3e-72e7-4cbe-965a-efa16b3ecd5f""",
     '2021': """2f27e464-4910-46bf-817b-a9bac19f86f3""",
     '2020': """5baeaf58-9af2-4a39-a357-9063ca450893""",
 }
