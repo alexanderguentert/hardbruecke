@@ -266,6 +266,14 @@ def render_content(tab):
                 ), style={'width': '85%', 'display': 'inline-block'}),
             html.Div(dcc.Graph(id='plot_time_group', )),
             html.Div(dcc.Graph(id='plot_name_group', )),
+            dcc.Markdown(children="""
+# Entscheidungsbaum
+Aus den historischen Daten wurde ein Entscheidungsbaum errechnet.
+Die Prognosen werden auf Grundlage dieses Baumes erstellt. Der gesamte Baum ist relativ gross und komplex, 
+deswegen wird hier nur ein Teil Dargestellt:"""),
+            html.Img(
+                src='https://raw.githubusercontent.com/alexanderguentert/hardbruecke/main/image/decision_tree.png',
+                width=1500),
         ])
     elif tab == 'tab-3':
         return html.Div([
