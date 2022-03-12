@@ -341,7 +341,7 @@ def update_plots_tab1(date, location_name):
      ]
 )
 def update_plots_tab2(resource, time_group, agg_value):
-    return plot_time_group(resource_api[resource], freq_dict[time_group], agg_dict[agg_value]), plot_name_group(resource_api['2021'], agg_dict[agg_value])
+    return plot_time_group(resource_api[resource], freq_dict[time_group], agg_dict[agg_value]), plot_name_group(resource_api[resource], agg_dict[agg_value])
 
 
 if __name__ == '__main__':
