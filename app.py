@@ -15,10 +15,17 @@ from dash.dependencies import Input, Output
 # functions
 
 
-def data_preparation(df, names):
+def data_preparation(df, names, date):
     df['Timestamp'] = pd.to_datetime(df['Timestamp'])
+
+    df = df.merge(pd.DataFrame({'Timestamp': create_date_range(date)}), how='right')
+    df[['In', 'Out']] = df[['In', 'Out']].fillna(9999)  # fill with dummy value
+
     df = df.set_index(['Timestamp', 'Name']).stack().reset_index()
     df = df.rename(columns={'level_2': 'direction', 0: 'count'})
+
+    df.loc[df['Name'].isna(), 'count'] = np.nan  # remove dummy value
+
     df['direction'] = df['direction'].astype('category')
 
     df['year'] = df['Timestamp'].dt.year
@@ -41,6 +48,8 @@ def data_preparation(df, names):
 
 
 def plot_day(df, day, name, regressor, XList):
+    df['name_cat'] = df['name_cat'].fillna(names[name])
+    df['Name'] = df['Name'].fillna(name)
     df_filter = df[(df['day'] == day) & (df['Name'] == name)].copy()
     df_filter['prediction'] = regressor.predict(df_filter[XList])
     melted = df_filter.melt(id_vars=['Timestamp', 'direction', 'Name'], value_vars=['count', 'prediction'])
@@ -177,8 +186,9 @@ agg_dict = {
 
 location_names = [x for x in names.keys() if 'ü' not in x]  # api has problems with ü
 
-yesterday = (pd.to_datetime('today') - pd.Timedelta('1 days')).strftime('%Y-%m-%d')
-dates_max = yesterday
+# start_day = (pd.to_datetime('today') - pd.Timedelta('1 days')).strftime('%Y-%m-%d')
+start_day = pd.to_datetime('today').strftime('%Y-%m-%d')
+dates_max = start_day
 
 # load model
 filename_model = './models/DecisionTreeRegressor.sav'
@@ -317,13 +327,13 @@ def update_plots_tab1(date, location_name):
         # data from api
         data_available, df_api = download_from_api(date, resource_year)
         if data_available:
-            plot_df = data_preparation(df_api, names)
+            plot_df = data_preparation(df_api, names, date)
         else:
-            future = data_preparation(create_future_df(location_name, date), names)
+            future = data_preparation(create_future_df(location_name, date), names, date)
             future['count'] = np.nan  # no real data available
             plot_df = future
     else:
-        future = data_preparation(create_future_df(location_name, date), names)
+        future = data_preparation(create_future_df(location_name, date), names, date)
         future['count'] = np.nan  # no real data available
         plot_df = future
     return plot_day(plot_df, date, location_name, regressor, XList)
