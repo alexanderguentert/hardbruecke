@@ -3,7 +3,8 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 
-from sklearn.tree import DecisionTreeRegressor
+# from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
 
 import dash
 import dash_html_components as html
@@ -191,7 +192,8 @@ start_day = pd.to_datetime('today').strftime('%Y-%m-%d')
 dates_max = start_day
 
 # load model
-filename_model = './models/DecisionTreeRegressor.sav'
+# filename_model = './models/DecisionTreeRegressor.sav'
+filename_model = './models/RandomForestRegressor.sav'
 regressor = pickle.load(open(filename_model, 'rb'))
 
 
